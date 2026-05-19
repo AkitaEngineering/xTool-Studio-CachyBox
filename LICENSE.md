@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2026 Sascha Schüllerl
+Copyright (c) 2026 Sascha Schüller
 Copyright (c) 2026 Akita Engineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,7 +25,7 @@ SOFTWARE.
 
 ## Attribution
 
-This repository is based on MIT-licensed work originally authored by **Sascha Schüllerl**.
+This repository is based on MIT-licensed work originally authored by **Sascha Schüller**.
 
 **Akita Engineering** adapted the project for QiDi Studio, fixed compatibility issues, and released this fork. The original MIT notice is retained to preserve upstream attribution while also covering the modifications included in this repository.
 
