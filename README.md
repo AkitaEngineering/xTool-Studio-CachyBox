@@ -1,11 +1,11 @@
-# QiDi‑Studio‑CachyBox 🚀
+# QiDi‑Studio‑CachyBox
 ### QiDi Studio: CachyOS Container Edition
 
 This repository contains installer scripts and container configuration that make it simple to run **QiDi Studio** inside a lightweight Ubuntu 24.04 LTS container using **Distrobox** and **Podman**. The container approach protects you from library incompatibilities on rolling‑release distros such as CachyOS while still providing native GPU acceleration.
 
 ---
 
-## ✨ Features
+## Features
 
 * **Latest Release Resolution:** Resolves the latest QiDi Studio Ubuntu 24 AppImage from the official GitHub releases by default, with overrides available via `--url` or `QIDI_URL`.
 * **Hardware-Aware Detection:** Automatically identifies Nvidia, AMD, or Intel GPUs and sets up the correct driver stack.
@@ -17,7 +17,7 @@ This repository contains installer scripts and container configuration that make
 
 ---
 
-## 🛠 Prerequisites
+## Prerequisites
 
 Ensure your host system has the following installed:
 
@@ -28,7 +28,7 @@ Ensure your host system has the following installed:
 
 ---
 
-## 🚀 Installation
+## Installation
 
 1. **Clone the repository:**
 
@@ -64,7 +64,7 @@ Ensure your host system has the following installed:
 
 ---
 
-## 📂 File Structure
+## File Structure
 
 | File | Purpose |
 | :--- | :--- |
@@ -76,7 +76,7 @@ Ensure your host system has the following installed:
 
 ---
 
-## ⚙️ Functionality Summary
+## Functionality Summary
 
 1. **GPU override:** Detects your GPU (e.g. AMD 7900XTX) but lets you pick a different stack if needed.
 2. **Image source options:** Use a prebuilt image or build one locally for maximum compatibility.
@@ -85,7 +85,7 @@ Ensure your host system has the following installed:
 
 ---
 
-## 🐳 Advanced Usage: Podman‑Compose
+## Advanced Usage: Podman‑Compose
 
 You can bypass the installer and run the container manually.
 
@@ -106,7 +106,7 @@ On first launch, the compose setup builds the selected image if needed, resolves
 
 ---
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 * **DNS errors:** Installer retries with `--dns 1.1.1.1` if it cannot resolve hosts.
 * **Nvidia install hangs at container creation:** Install `nvidia-container-toolkit`, generate a CDI spec such as `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`, then rerun the installer. Without CDI support, the installer falls back to Generic rendering.
@@ -115,7 +115,7 @@ On first launch, the compose setup builds the selected image if needed, resolves
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### Why use Distrobox?
 
@@ -131,7 +131,7 @@ Configurations persist in `~/.config/QIDIStudio/` on the host. They remain intac
 
 ---
 
-## 🗑 Uninstallation
+## Uninstallation
 
 Run `./uninstall.sh` to remove the container, images, and desktop entries.
 
@@ -139,6 +139,6 @@ If you specifically want the Fish variant, run `./uninstall.fish`.
 
 ---
 
-## 🤝 Credits
+## Credits
 
-Adapted specifically for QiDi Studio with help from an AI assistant for the CachyOS community.
+Adapted specifically for QiDi Studio by Akita Engineering
