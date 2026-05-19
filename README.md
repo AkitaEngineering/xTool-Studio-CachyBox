@@ -142,7 +142,7 @@ If you specifically want the Fish variant, run `./uninstall.fish`.
 
 The code and configuration in this repository remain available under the MIT License.
 
-This fork preserves attribution to the original MIT-licensed work by Sascha Schüllerl and includes Akita Engineering's QiDi Studio adaptations, fixes, and release work under the same repository license.
+This fork preserves attribution to the original MIT-licensed work by Sascha Schüller and includes Akita Engineering's QiDi Studio adaptations, fixes, and release work under the same repository license.
 
 QIDI Studio itself is proprietary software owned by QIDITECH and is not redistributed under the MIT License in this repository.
 
@@ -150,4 +150,4 @@ QIDI Studio itself is proprietary software owned by QIDITECH and is not redistri
 
 ## Credits
 
-Original MIT-licensed work by Sascha Schüllerl. Adapted, fixed, and released for QiDi Studio by Akita Engineering.
+Original MIT-licensed work by Sascha Schüller. Adapted, fixed, and released for QiDi Studio by Akita Engineering.
