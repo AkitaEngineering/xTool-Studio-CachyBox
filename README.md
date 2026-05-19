@@ -33,10 +33,9 @@ Ensure your host system has the following installed:
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/sh4un-dot-com/QiDi-Studio-CachyBox.git
+   git clone https://github.com/AkitaEngineering/QiDi-Studio-CachyBox.git
    cd QiDi-Studio-CachyBox
    ```
-
 
 2. **Run the default Bash installer:**
 
@@ -139,6 +138,16 @@ If you specifically want the Fish variant, run `./uninstall.fish`.
 
 ---
 
+## License
+
+The code and configuration in this repository remain available under the MIT License.
+
+This fork preserves attribution to the original MIT-licensed work by Sascha Schüllerl and includes Akita Engineering's QiDi Studio adaptations, fixes, and release work under the same repository license.
+
+QIDI Studio itself is proprietary software owned by QIDITECH and is not redistributed under the MIT License in this repository.
+
+---
+
 ## Credits
 
-Adapted specifically for QiDi Studio by Akita Engineering
+Original MIT-licensed work by Sascha Schüllerl. Adapted, fixed, and released for QiDi Studio by Akita Engineering.

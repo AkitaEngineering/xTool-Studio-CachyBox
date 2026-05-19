@@ -1,6 +1,7 @@
 # MIT License
 
-Copyright (c) 2026 [Sascha Schüller]
+Copyright (c) 2026 Sascha Schüllerl
+Copyright (c) 2026 Akita Engineering
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,14 @@ SOFTWARE.
 
 ---
 
+## Attribution
+
+This repository is based on MIT-licensed work originally authored by **Sascha Schüllerl**.
+
+**Akita Engineering** adapted the project for QiDi Studio, fixed compatibility issues, and released this fork. The original MIT notice is retained to preserve upstream attribution while also covering the modifications included in this repository.
+
+---
+
 ## 🤖 Credits & Acknowledgements
 
 The development of these installation scripts, container configurations, and the overall logic of **QiDi-Studio-CachyBox** was created with the assistance of an **AI Assistant (Google Gemini)**. 
@@ -36,7 +45,7 @@ The AI helped in:
 
 ## ⚖️ Disclaimer regarding QIDI Studio
 
-The license above applies strictly to the automation scripts (`install.fish`, `install.sh`, etc.), the `Containerfiles`, and the `docker-compose.yml` found in this repository. 
+The license above applies to the code and supporting repository content in this project, including the automation scripts (`install.fish`, `install.sh`, etc.), the `Containerfiles`, and the `docker-compose.yml` found in this repository.
 
 **Please note:**
 - **QIDI Studio** is a proprietary software product owned by **QIDITECH**. This project does not distribute the software itself but provides automation tools to download and install it from official QIDIStudio resources.
