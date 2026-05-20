@@ -135,7 +135,7 @@ while [[ "$#" -gt 0 ]]; do
         --log-file)
             LOG_FILE="$2"; shift 2 ;;
         --help|-h)
-            echo "Usage: $0 [--non-interactive] [--dry-run] [--check] [--uninstall] [--url URL] [--container-name NAME]";
+            echo "Usage: $0 [--non-interactive|--yes|-y] [--dry-run] [--check] [--uninstall] [--url URL] [--container-name NAME] [--gpu 1-4] [--image-source 1-2] [--log-file PATH]";
             exit 0 ;;
         *) shift ;;
     esac

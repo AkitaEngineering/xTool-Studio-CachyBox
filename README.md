@@ -63,6 +63,78 @@ Ensure your host system has the following installed:
 
 ---
 
+## Command-Line Options
+
+Use these flags when you want to validate a host, automate installs, or preselect the installer prompts.
+
+| Flag | Scope | Description |
+| :--- | :--- | :--- |
+| `--check` | Bash / Fish | Run prerequisite and environment checks, then exit without installing. |
+| `--dry-run` | Bash / Fish | Print the actions the installer would take without changing the system. |
+| `--non-interactive`, `--yes`, `-y` | Bash / Fish | Accept defaults and skip interactive prompts. |
+| `--uninstall` | Bash / Fish | Hand off to the matching uninstaller while preserving the selected container name and dry-run/non-interactive mode. |
+| `--url URL` | Bash / Fish | Use a specific AppImage instead of resolving the latest Ubuntu 24 release. |
+| `--container-name NAME` | Bash / Fish | Override the default container name, `qidi-studio`. |
+| `--gpu 1-4` | Bash / Fish | Preselect the driver stack: `1` Nvidia, `2` AMD, `3` Intel, `4` Generic/software rendering. |
+| `--image-source 1-2` | Bash / Fish | Choose the image source up front: `1` pull the standard Ubuntu 24 image, `2` build the matching local `containerfile.*`. |
+| `--log-file PATH` | Bash / Fish | Write installer logs to a custom path instead of the default log location. |
+
+### Example Automation Flows
+
+```bash
+./install.sh --check
+./install.sh --non-interactive --gpu 2 --image-source 2
+./install.sh --dry-run --container-name qidi-studio-test
+```
+
+```fish
+./install.fish --non-interactive --url https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage
+```
+
+### Common Non-Interactive Installs
+
+Bash examples:
+
+```bash
+# AMD host: build the AMD-tuned local image
+./install.sh --non-interactive --gpu 2 --image-source 2
+
+# Intel host: build the Intel-tuned local image
+./install.sh --non-interactive --gpu 3 --image-source 2
+
+# Nvidia host: requires Podman CDI support
+./install.sh --non-interactive --gpu 1 --image-source 2
+
+# Preflight only: verify prerequisites and exit
+./install.sh --check
+
+# Dry run: preview the AMD install path without making changes
+./install.sh --dry-run --non-interactive --gpu 2 --image-source 2
+```
+
+Fish equivalents:
+
+```fish
+# AMD host: build the AMD-tuned local image
+./install.fish --non-interactive --gpu 2 --image-source 2
+
+# Intel host: build the Intel-tuned local image
+./install.fish --non-interactive --gpu 3 --image-source 2
+
+# Nvidia host: requires Podman CDI support
+./install.fish --non-interactive --gpu 1 --image-source 2
+
+# Preflight only: verify prerequisites and exit
+./install.fish --check
+
+# Dry run: preview the AMD install path without making changes
+./install.fish --dry-run --non-interactive --gpu 2 --image-source 2
+```
+
+The Nvidia example assumes `nvidia-container-toolkit` and a CDI spec such as `/etc/cdi/nvidia.yaml`; otherwise the installer falls back to Generic rendering in non-interactive mode.
+
+---
+
 ## File Structure
 
 | File | Purpose |
@@ -70,7 +142,7 @@ Ensure your host system has the following installed:
 | `install.sh` | Default Bash installer for any Linux distro. |
 | `install.fish` | Optional Fish-shell installer variant. |
 | `uninstall.sh` / `uninstall.fish` | Clean up containers, images, and desktop entries. |
-| `containerfile.[gpu]` | Blueprints to build a local container image (AMD, Nvidia, Intel). |
+| `containerfile.amd`, `containerfile.intel`, `containerfile.nvidia` | Blueprints to build a local container image for AMD, Intel, or Nvidia hosts. |
 | `docker-compose.yml` | Configuration for running QiDi Studio via `podman compose` or `docker compose`. |
 
 ---
@@ -136,6 +208,8 @@ Run `./uninstall.sh` to remove the container, images, and desktop entries.
 
 If you specifically want the Fish variant, run `./uninstall.fish`.
 
+You can also delegate to the matching uninstaller via `./install.sh --uninstall` or `./install.fish --uninstall`.
+
 ---
 
 ## License
@@ -145,6 +219,8 @@ The code and configuration in this repository remain available under the MIT Lic
 This fork preserves attribution to the original MIT-licensed work by Sascha Schüller and includes Akita Engineering's QiDi Studio adaptations, fixes, and release work under the same repository license.
 
 QIDI Studio itself is proprietary software owned by QIDITECH and is not redistributed under the MIT License in this repository.
+
+See [LICENSE.md](LICENSE.md) for the full attribution wording and the proprietary-software disclaimer.
 
 ---
 

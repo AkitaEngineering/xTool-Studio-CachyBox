@@ -62,7 +62,7 @@ while test $i -le (count $argv)
             set i (math $i + 1)
             set img_choice $argv[$i]
         case --help -h
-            echo "Usage: $_ [--non-interactive] [--dry-run] [--check] [--uninstall] [--url URL] [--container-name NAME] [--gpu 1-4] [--image-source 1-2]"
+            echo "Usage: "(basename (status filename))" [--non-interactive|--yes|-y] [--dry-run] [--check] [--uninstall] [--url URL] [--container-name NAME] [--gpu 1-4] [--image-source 1-2] [--log-file PATH]"
             exit 0
     end
     set i (math $i + 1)
