@@ -1,0 +1,17 @@
+# Local smoke-test and container runtime state
+/.smoke-home/
+
+# Local environment and secret overrides
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
