@@ -202,6 +202,36 @@ Configurations persist in `~/.config/QIDIStudio/` on the host. They remain intac
 
 ---
 
+## Upgrading
+
+To upgrade QiDi Studio or pick up changes from this repository, update this repo and rerun the installer with the same options you used originally.
+
+```bash
+git pull
+./install.sh
+```
+
+The installer removes any existing container with the selected name, recreates it, and resolves the latest Ubuntu 24 QiDi Studio AppImage by default. Your profiles and settings are normally preserved because they live in `~/.config/QIDIStudio/` on the host.
+
+If you installed with specific flags before, reuse them during the upgrade. Examples:
+
+```bash
+# Generic / software rendering
+./install.sh --non-interactive --gpu 4 --image-source 1
+
+# Rebuild a custom local image during upgrade
+./install.sh --non-interactive --gpu 2 --image-source 2
+
+# Pin a specific upstream AppImage instead of the latest release
+./install.sh --url https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage
+```
+
+Fish users can follow the same process with `./install.fish` and the same flags.
+
+You only need to run the uninstaller first if you want a full clean reset. A normal upgrade does not remove your saved settings unless you explicitly choose that during uninstall.
+
+---
+
 ## Uninstallation
 
 Run `./uninstall.sh` to remove the container, images, and desktop entries.
