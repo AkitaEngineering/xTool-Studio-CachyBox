@@ -320,11 +320,12 @@ GPU_FLAG=""
 ADD_FLAGS=""
 GPU_TYPE="generic"
 CONTAINERFILE="containerfile.amd"
+QIDI_FORCE_SOFTWARE_RENDERING=1
 
 case $gpu_choice in
-    1) GPU_FLAG="--nvidia"; GPU_TYPE="nvidia"; CONTAINERFILE="containerfile.nvidia" ;;
-    2) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="amd"; CONTAINERFILE="containerfile.amd" ;;
-    3) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="intel"; CONTAINERFILE="containerfile.intel" ;;
+    1) GPU_FLAG="--nvidia"; GPU_TYPE="nvidia"; CONTAINERFILE="containerfile.nvidia"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
+    2) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="amd"; CONTAINERFILE="containerfile.amd"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
+    3) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="intel"; CONTAINERFILE="containerfile.intel"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
     *) GPU_TYPE="generic"; CONTAINERFILE="containerfile.amd" ;;
 esac
 
@@ -440,7 +441,17 @@ while [ "$SUCCESS" = false ]; do
     sudo rm -rf /opt/QIDIStudio
     sudo mkdir -p /opt/QIDIStudio
     sudo cp -a squashfs-root/. /opt/QIDIStudio/
-    printf 'IyEvYmluL3NoCmV4ZWMgL29wdC9RSURJU3R1ZGlvL0FwcFJ1biAiJEAiCg==' | base64 -d | sudo tee /usr/local/bin/QIDIStudio >/dev/null
+    printf '%s\n' '#!/bin/sh' \
+        "if [ \"$QIDI_FORCE_SOFTWARE_RENDERING\" = \"1\" ]; then" \
+        '  export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"' \
+        '  export GALLIUM_DRIVER="${GALLIUM_DRIVER:-llvmpipe}"' \
+        '  export MESA_LOADER_DRIVER_OVERRIDE="${MESA_LOADER_DRIVER_OVERRIDE:-llvmpipe}"' \
+        '  export __GLX_VENDOR_LIBRARY_NAME="${__GLX_VENDOR_LIBRARY_NAME:-mesa}"' \
+        '  if [ -z "${__EGL_VENDOR_LIBRARY_FILENAMES:-}" ] && [ -f /usr/share/glvnd/egl_vendor.d/50_mesa.json ]; then' \
+        '    export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json' \
+        '  fi' \
+        'fi' \
+        'exec /opt/QIDIStudio/AppRun "$@"' | sudo tee /usr/local/bin/QIDIStudio >/dev/null
     sudo chmod 0755 /usr/local/bin/QIDIStudio
     desktop_src=\$(find squashfs-root -name 'QIDIStudio.desktop' | head -n 1)
     icon_src=\$(find squashfs-root -path '*/usr/share/icons/hicolor/192x192/apps/QIDIStudio.png' -o -name 'QIDIStudio.png' | head -n 1)
