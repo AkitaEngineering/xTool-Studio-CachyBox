@@ -25,29 +25,25 @@ SOFTWARE.
 
 ## Attribution
 
-This repository is based on MIT-licensed work originally authored by **Sascha Schüller**.
+This repository is based on MIT-licensed container tooling originally authored by Sascha Schüller.
 
-**Akita Engineering** adapted the project for QiDi Studio, fixed compatibility issues, and released this fork. The original MIT notice is retained to preserve upstream attribution while also covering the modifications included in this repository.
-
----
-
-## 🤖 Credits & Acknowledgements
-
-The development of these installation scripts, container configurations, and the overall logic of **QiDi-Studio-CachyBox** was created with the assistance of an **AI Assistant (Google Gemini)**. 
-
-The AI helped in:
-- Crafting cross-shell compatible scripts (Fish & Bash).
-- Implementing robust container orchestration and GPU pass-through logic.
-- Designing the "Auto-Stop" resource management feature.
-- Debugging network and library issues specific to Ubuntu 24.04 and CachyOS.
+Akita Engineering adapted that work for a later proprietary-app workflow, and this fork continues that automation approach while retargeting the runtime to xTool Studio.
 
 ---
 
-## ⚖️ Disclaimer regarding QIDI Studio
+## Credits & Acknowledgements
 
-The license above applies to the code and supporting repository content in this project, including the automation scripts (`install.fish`, `install.sh`, etc.), the `Containerfiles`, and the `docker-compose.yml` found in this repository.
+The automation in this repository was developed with AI-assisted tooling support during its evolution across Bash, Fish, container, and desktop-integration workflows.
 
-**Please note:**
-- **QIDI Studio** is a proprietary software product owned by **QIDITECH**. This project does not distribute the software itself but provides automation tools to download and install it from official QIDIStudio resources.
-- By using these scripts, you agree to QIDI Studio's original End User License Agreement (EULA) and terms of service.
-- The developers of this project are not affiliated with QIDITECH.
+---
+
+## Disclaimer Regarding xTool Studio
+
+The MIT license above applies to the repository code and configuration, including the install scripts, uninstall scripts, containerfiles, and compose configuration.
+
+Please note:
+
+- xTool Studio is proprietary software owned by xTool.
+- This repository does not redistribute xTool Studio; it automates downloading the official installer from xTool-controlled distribution endpoints.
+- By using these scripts, you remain subject to xTool's own license terms, installer terms, and service agreements.
+- The maintainers of this repository are not affiliated with xTool.

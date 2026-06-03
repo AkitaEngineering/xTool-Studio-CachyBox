@@ -7,12 +7,12 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-LOG_DIR="$HOME/.cache/qidi-installer"
+LOG_DIR="$HOME/.cache/xtool-studio-cachy-box"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/uninstall.log"
 LAST_STEP_FILE="$LOG_DIR/last_failed_step"
 
-CONTAINER_NAME="qidi-studio"
+CONTAINER_NAME="xtool-studio"
 NON_INTERACTIVE=false
 DRY_RUN=false
 
@@ -34,7 +34,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo -e "${BLUE}--------------------------------------------------------${NC}"
-echo -e "QIDI Studio Uninstaller (Universal Bash)"
+echo -e "xTool Studio Cachy Box Uninstaller (Universal Bash)"
 echo -e "${BLUE}--------------------------------------------------------${NC}"
 
 log(){
@@ -60,9 +60,9 @@ if command -v distrobox &>/dev/null && distrobox list | grep -q "$CONTAINER_NAME
     log INFO "--- Step 1: Removing Menu Entries & Binaries ---"
     LAST_STEP="unexport"
     if [ "$DRY_RUN" = true ]; then
-        log INFO "DRY RUN: would unexport QIDIStudio from $CONTAINER_NAME"
+        log INFO "DRY RUN: would unexport xToolStudio from $CONTAINER_NAME"
     else
-        distrobox enter "$CONTAINER_NAME" -- distrobox-export --app QIDIStudio --delete
+        distrobox enter "$CONTAINER_NAME" -- distrobox-export --app xToolStudio --delete
     fi
 else
     if ! command -v distrobox &>/dev/null; then
@@ -93,16 +93,16 @@ fi
 echo -e "${YELLOW}--- Step 3: Removing Podman Images ---${NC}"
 # Look for images created during custom installation
 if command -v podman &>/dev/null; then
-    IMAGES=$(podman images | grep "qidi-custom" | awk '{print $3}')
+    IMAGES=$(podman images | grep "xtool-custom" | awk '{print $3}')
     if [ -n "$IMAGES" ]; then
         if [ "$DRY_RUN" = true ]; then
             log INFO "DRY RUN: would remove images: $IMAGES"
         else
             podman rmi -f "$IMAGES"
         fi
-        log INFO "Custom QIDI images removed."
+        log INFO "Custom xTool Studio images removed."
     else
-        log INFO "No custom QIDI images found."
+        log INFO "No custom xTool Studio images found."
     fi
 else
     log WARN "podman is not installed; skipping image cleanup."
@@ -117,9 +117,11 @@ if [ "$DRY_RUN" = true ]; then
     fi
 else
     # Remove leftover desktop files and binaries just in case
-    rm -f ~/.local/share/applications/*qidi*.desktop
-    rm -f ~/.local/share/applications/*QIDIStudio*.desktop
-    rm -f ~/.local/bin/QIDIStudio
+    rm -f ~/.local/share/applications/*xtool*.desktop
+    rm -f ~/.local/share/applications/*xToolStudio*.desktop
+    rm -f ~/.local/bin/xToolStudio
+    rm -rf ~/.local/share/xtool-studio
+    rm -rf ~/.cache/xtool-studio-cachy-box
 
     # Update host desktop database
     if command -v update-desktop-database &> /dev/null; then
@@ -130,23 +132,22 @@ fi
 
 # 5. Optional: Config files cleanup
 echo -e "\n${RED}CAUTION: Configuration Cleanup${NC}"
-echo -e "Your slicer profiles and settings are stored in ${BLUE}~/.config/QIDIStudio${NC}"
+echo -e "Your xTool Studio Wine prefix and downloaded installer are stored in ${BLUE}~/.local/share/xtool-studio${NC}"
 if [ "$NON_INTERACTIVE" = true ]; then
     cleanup_config=n
 else
-    read -p "Do you want to delete all your profiles and settings? (y/N): " cleanup_config
+    read -p "Do you want to delete the Wine prefix, cached installer, and local xTool data? (y/N): " cleanup_config
 fi
 
 if [[ "$cleanup_config" == "y" || "$cleanup_config" == "Y" ]]; then
     if [ "$DRY_RUN" = true ]; then
-        log INFO "DRY RUN: would delete ~/.config/QIDIStudio and ~/.config/qidi-studio"
+        log INFO "DRY RUN: would delete ~/.local/share/xtool-studio"
     else
-        rm -rf ~/.config/QIDIStudio
-        rm -rf ~/.config/qidi-studio
-        echo -e "${GREEN}Configuration directories deleted.${NC}"
+        rm -rf ~/.local/share/xtool-studio
+        echo -e "${GREEN}xTool Studio local data deleted.${NC}"
     fi
 else
-    echo -e "${BLUE}Configuration directories kept.${NC}"
+    echo -e "${BLUE}xTool Studio local data kept.${NC}"
 fi
 
 echo -e "${BLUE}--------------------------------------------------------${NC}"

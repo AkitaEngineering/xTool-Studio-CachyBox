@@ -8,11 +8,11 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}--------------------------------------------------------${NC}"
-echo -e "QIDI Studio Installer (Universal Bash)"
+echo -e "xTool Studio Cachy Box Installer (Universal Bash)"
 echo -e "${BLUE}--------------------------------------------------------${NC}"
 
 # --- CLI options & Logging ---
-LOG_DIR="$HOME/.cache/qidi-installer"
+LOG_DIR="$HOME/.cache/xtool-studio-cachy-box"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/install.log"
 LAST_STEP_FILE="$LOG_DIR/last_failed_step"
@@ -44,35 +44,32 @@ run_logged(){
     return ${PIPESTATUS[0]:-0}
 }
 
-resolve_latest_qidi_url(){
+resolve_latest_xtool_url(){
     local latest_response latest_url
 
-    if [ -n "$QIDI_URL" ]; then
-        case "$QIDI_URL_SOURCE" in
+    if [ -n "$XTOOL_URL" ]; then
+        case "$XTOOL_URL_SOURCE" in
             cli)
-                log "INFO" "Using QIDI AppImage URL from CLI: $QIDI_URL"
+                log "INFO" "Using xTool Studio installer URL from CLI: $XTOOL_URL"
                 ;;
             environment)
-                log "INFO" "Using QIDI AppImage URL from environment: $QIDI_URL"
+                log "INFO" "Using xTool Studio installer URL from environment: $XTOOL_URL"
                 ;;
         esac
         return 0
     fi
 
     latest_response=$(curl --fail -fsSL --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 60 \
-        -H 'Accept: application/vnd.github+json' "$QIDI_LATEST_API" 2>>"$LOG_FILE" || true)
+        "$XTOOL_RELEASE_NOTES_URL" 2>>"$LOG_FILE" || true)
 
-    latest_url=$(printf '%s' "$latest_response" | grep -oE '"browser_download_url":[[:space:]]*"[^"]+Ubuntu24\.AppImage"' | head -n 1 | sed -E 's/.*"([^"]+)"/\1/')
-    if [ -z "$latest_url" ]; then
-        latest_url=$(printf '%s' "$latest_response" | grep -oE '"browser_download_url":[[:space:]]*"[^"]+AppImage"' | head -n 1 | sed -E 's/.*"([^"]+)"/\1/')
-    fi
+    latest_url=$(printf '%s' "$latest_response" | grep -oE 'https://storage[^"[:space:]]+/xTool-Studio-x64-[^"[:space:]]+\.exe' | head -n 1)
 
     if [ -n "$latest_url" ]; then
-        QIDI_URL="$latest_url"
-        log "INFO" "Resolved latest QIDI Studio AppImage: $QIDI_URL"
+        XTOOL_URL="$latest_url"
+        log "INFO" "Resolved latest xTool Studio Windows installer: $XTOOL_URL"
     else
-        QIDI_URL="$DEFAULT_QIDI_URL"
-        log "WARN" "Unable to resolve the latest QiDi Studio release; falling back to $QIDI_URL"
+        XTOOL_URL="$DEFAULT_XTOOL_URL"
+        log "WARN" "Unable to resolve the latest xTool Studio release; falling back to $XTOOL_URL"
     fi
 }
 
@@ -91,13 +88,13 @@ build_distrobox_create_cmd(){
     DBX_CREATE_CMD+=(--yes)
 }
 
-# latest-release resolution (can be overridden with QIDI_URL or --url)
-DEFAULT_QIDI_URL="https://github.com/QIDITECH/QIDIStudio/releases/download/v2.05.02.50/QIDIStudio_v02.05.02.50_Ubuntu24.AppImage"
-QIDI_LATEST_API="https://api.github.com/repos/QIDITECH/QIDIStudio/releases/latest"
-QIDI_URL="${QIDI_URL:-}"
-QIDI_URL_SOURCE=""
-if [ -n "$QIDI_URL" ]; then
-    QIDI_URL_SOURCE="environment"
+# latest-release resolution (can be overridden with XTOOL_URL or --url)
+DEFAULT_XTOOL_URL="https://storage.atomm.com/efficacy/atomm-package/prod/packages/109/d7cb892b-c082-4565-803e-5e71b9f8026b/xTool-Studio-x64-1.6.6.exe"
+XTOOL_RELEASE_NOTES_URL="https://support.xtool.com/article/1773"
+XTOOL_URL="${XTOOL_URL:-}"
+XTOOL_URL_SOURCE=""
+if [ -n "$XTOOL_URL" ]; then
+    XTOOL_URL_SOURCE="environment"
 fi
 
 # Prevent running as root: distrobox commands do not behave correctly under sudo
@@ -112,7 +109,7 @@ NON_INTERACTIVE=false
 DRY_RUN=false
 PRECHECK=false
 UNINSTALL=false
-CONTAINER_NAME="qidi-studio"
+CONTAINER_NAME="xtool-studio"
 
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
@@ -125,7 +122,7 @@ while [[ "$#" -gt 0 ]]; do
         --uninstall)
             UNINSTALL=true; shift ;;
         --url)
-            QIDI_URL="$2"; QIDI_URL_SOURCE="cli"; shift 2 ;;
+            XTOOL_URL="$2"; XTOOL_URL_SOURCE="cli"; shift 2 ;;
         --container-name)
             CONTAINER_NAME="$2"; shift 2 ;;
         --gpu)
@@ -244,7 +241,7 @@ run_in_container(){
 }
 
 
-# --- Download URL for the latest AppImage release ---
+# --- Download URL for the latest Windows installer ---
 # (may be overridden with --url)
 
 # if --check was given, run preflight and exit
@@ -253,7 +250,7 @@ if [ "$PRECHECK" = true ]; then
     exit 0
 fi
 
-resolve_latest_qidi_url
+resolve_latest_xtool_url
 
 
 # --- GPU Selection ---
@@ -320,12 +317,12 @@ GPU_FLAG=""
 ADD_FLAGS=""
 GPU_TYPE="generic"
 CONTAINERFILE="containerfile.amd"
-QIDI_FORCE_SOFTWARE_RENDERING=1
+XTOOL_FORCE_SOFTWARE_RENDERING=1
 
 case $gpu_choice in
-    1) GPU_FLAG="--nvidia"; GPU_TYPE="nvidia"; CONTAINERFILE="containerfile.nvidia"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
-    2) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="amd"; CONTAINERFILE="containerfile.amd"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
-    3) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="intel"; CONTAINERFILE="containerfile.intel"; QIDI_FORCE_SOFTWARE_RENDERING=0 ;;
+    1) GPU_FLAG="--nvidia"; GPU_TYPE="nvidia"; CONTAINERFILE="containerfile.nvidia"; XTOOL_FORCE_SOFTWARE_RENDERING=0 ;;
+    2) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="amd"; CONTAINERFILE="containerfile.amd"; XTOOL_FORCE_SOFTWARE_RENDERING=0 ;;
+    3) ADD_FLAGS="--device /dev/dri:/dev/dri"; GPU_TYPE="intel"; CONTAINERFILE="containerfile.intel"; XTOOL_FORCE_SOFTWARE_RENDERING=0 ;;
     *) GPU_TYPE="generic"; CONTAINERFILE="containerfile.amd" ;;
 esac
 
@@ -397,11 +394,11 @@ while [ "$SUCCESS" = false ]; do
         if [ -f "$CONTAINERFILE" ]; then
             log "INFO" "Building local image from $CONTAINERFILE"
             if [ "$DRY_RUN" = true ]; then
-                log "INFO" "DRY RUN: would run podman build -t qidi-custom-$GPU_TYPE -f $CONTAINERFILE ."
+                log "INFO" "DRY RUN: would run podman build -t xtool-custom-$GPU_TYPE -f $CONTAINERFILE ."
             else
-                run_logged podman build -t "qidi-custom-$GPU_TYPE" -f "$CONTAINERFILE" . || fail "Image build failed. See $LOG_FILE for details."
+                run_logged podman build -t "xtool-custom-$GPU_TYPE" -f "$CONTAINERFILE" . || fail "Image build failed. See $LOG_FILE for details."
             fi
-            IMAGE_NAME="qidi-custom-$GPU_TYPE"
+            IMAGE_NAME="xtool-custom-$GPU_TYPE"
         else
             echo -e "${RED}Warning: $CONTAINERFILE not found, using standard image.${NC}"
         fi
@@ -425,24 +422,42 @@ while [ "$SUCCESS" = false ]; do
     set -euo pipefail
     echo 'Running: apt update'
     sudo apt update
+    echo 'Enabling i386 architecture for Wine'
+    sudo dpkg --add-architecture i386
+    sudo apt update
     echo 'Running: apt install (this will stream progress)'
-    sudo apt install -y curl ca-certificates lsb-release locales libfuse2* sudo libgl1 libglx-mesa0 libegl1 libgl1-mesa-dri libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 libwayland-server0
+    sudo apt install -y curl ca-certificates lsb-release locales sudo wine64 wine32 winbind cabextract p7zip-full xdg-utils libgl1 libglx-mesa0 libegl1 libgl1-mesa-dri mesa-utils mesa-vulkan-drivers libasound2 libpulse0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 libwayland-server0
     echo 'Generating locales'
     sudo locale-gen en_US.UTF-8
-    echo 'Downloading QIDI Studio AppImage (with retries)'
-    echo 'Downloading with curl (retries)'
-    tmp_app=\$(mktemp)
-    curl --fail -L --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 300 --progress-bar "$QIDI_URL" -o "\$tmp_app"
-    chmod +x "\$tmp_app"
-    echo 'Installing desktop metadata from the AppImage'
-    extract_dir=\$(mktemp -d)
-    cd "\$extract_dir"
-    "\$tmp_app" --appimage-extract >/dev/null
-    sudo rm -rf /opt/QIDIStudio
-    sudo mkdir -p /opt/QIDIStudio
-    sudo cp -a squashfs-root/. /opt/QIDIStudio/
+    app_home="\$HOME/.local/share/xtool-studio"
+    installer_dir="\$app_home/downloads"
+    prefix_dir="\$app_home/prefix"
+    url_record="\$app_home/last-download-url"
+    installer_path="\$installer_dir/xTool-Studio-setup.exe"
+    mkdir -p "\$installer_dir"
+    if [ ! -f "\$installer_path" ] || [ ! -f "\$url_record" ] || [ "\$(cat "\$url_record")" != "$XTOOL_URL" ]; then
+        echo 'Downloading xTool Studio Windows installer (with retries)'
+        curl --fail -L --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 300 --progress-bar "$XTOOL_URL" -o "\$installer_path"
+        printf '%s\n' "$XTOOL_URL" > "\$url_record"
+    fi
+    if [ ! -d "\$prefix_dir" ]; then
+        echo 'Initializing Wine prefix'
+        WINEPREFIX="\$prefix_dir" wineboot -u >/dev/null 2>&1 || true
+    fi
     printf '%s\n' '#!/bin/sh' \
-        "if [ \"$QIDI_FORCE_SOFTWARE_RENDERING\" = \"1\" ]; then" \
+        'set -eu' \
+        'APP_HOME="\$HOME/.local/share/xtool-studio"' \
+        'PREFIX_DIR="\$APP_HOME/prefix"' \
+        'INSTALLER_DIR="\$APP_HOME/downloads"' \
+        'INSTALLER_PATH="\$INSTALLER_DIR/xTool-Studio-setup.exe"' \
+        'find_installed_exe() {' \
+        '  find "\$PREFIX_DIR/drive_c" -type f \\( -iname "xTool Studio*.exe" -o -iname "xTool-Studio*.exe" -o -iname "xToolStudio*.exe" \\) ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" | sort | head -n 1' \
+        '}' \
+        'mkdir -p "\$APP_HOME" "\$INSTALLER_DIR"' \
+        'if [ ! -d "\$PREFIX_DIR" ]; then' \
+        '  WINEPREFIX="\$PREFIX_DIR" wineboot -u >/dev/null 2>&1 || true' \
+        'fi' \
+        "if [ \"$XTOOL_FORCE_SOFTWARE_RENDERING\" = \"1\" ]; then" \
         '  export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"' \
         '  export GALLIUM_DRIVER="${GALLIUM_DRIVER:-llvmpipe}"' \
         '  export MESA_LOADER_DRIVER_OVERRIDE="${MESA_LOADER_DRIVER_OVERRIDE:-llvmpipe}"' \
@@ -451,21 +466,30 @@ while [ "$SUCCESS" = false ]; do
         '    export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json' \
         '  fi' \
         'fi' \
-        'exec /opt/QIDIStudio/AppRun "$@"' | sudo tee /usr/local/bin/QIDIStudio >/dev/null
-    sudo chmod 0755 /usr/local/bin/QIDIStudio
-    desktop_src=\$(find squashfs-root -name 'QIDIStudio.desktop' | head -n 1)
-    icon_src=\$(find squashfs-root -path '*/usr/share/icons/hicolor/192x192/apps/QIDIStudio.png' -o -name 'QIDIStudio.png' | head -n 1)
-    [ -n "\$desktop_src" ] || { echo 'AppImage desktop file not found'; exit 1; }
-    sudo install -Dm 0644 "\$desktop_src" /usr/share/applications/QIDIStudio.desktop
-    sudo sed -i 's|^Exec=.*|Exec=/usr/local/bin/QIDIStudio %F|' /usr/share/applications/QIDIStudio.desktop
-    if grep -q '^TryExec=' /usr/share/applications/QIDIStudio.desktop; then
-        sudo sed -i 's|^TryExec=.*|TryExec=/usr/local/bin/QIDIStudio|' /usr/share/applications/QIDIStudio.desktop
-    else
-        echo 'TryExec=/usr/local/bin/QIDIStudio' | sudo tee -a /usr/share/applications/QIDIStudio.desktop >/dev/null
-    fi
-    if [ -n "\$icon_src" ]; then
-        sudo install -Dm 0644 "\$icon_src" /usr/share/icons/hicolor/192x192/apps/QIDIStudio.png
-    fi
+        'APP_EXE="\$(find_installed_exe)"' \
+        'if [ -z "\$APP_EXE" ]; then' \
+        '  echo "Launching xTool Studio installer inside Wine..."' \
+        '  WINEPREFIX="\$PREFIX_DIR" wine "\$INSTALLER_PATH" "\$@"' \
+        '  APP_EXE="\$(find_installed_exe)"' \
+        'fi' \
+        'if [ -z "\$APP_EXE" ]; then' \
+        '  echo "xTool Studio executable was not detected after installer exit. Complete setup, then relaunch." >&2' \
+        '  exit 1' \
+        'fi' \
+        'exec env WINEPREFIX="\$PREFIX_DIR" wine "\$APP_EXE" "\$@"' | sudo tee /usr/local/bin/xToolStudio >/dev/null
+    sudo chmod 0755 /usr/local/bin/xToolStudio
+    printf '%s\n' \
+        '[Desktop Entry]' \
+        'Type=Application' \
+        'Version=1.0' \
+        'Name=xTool Studio' \
+        'Comment=Run xTool Studio inside a Distrobox Wine container' \
+        'Exec=/usr/local/bin/xToolStudio %F' \
+        'TryExec=/usr/local/bin/xToolStudio' \
+        'Terminal=false' \
+        'Categories=Graphics;Utility;' \
+        'StartupNotify=true' \
+        'Icon=wine' | sudo tee /usr/share/applications/xToolStudio.desktop >/dev/null
     if [ -f /run/host/usr/share/cachyos-fish-config/cachyos-config.fish ]; then
         sudo mkdir -p /usr/share/cachyos-fish-config
         sudo ln -sfn /run/host/usr/share/cachyos-fish-config/cachyos-config.fish /usr/share/cachyos-fish-config/cachyos-config.fish
@@ -473,9 +497,6 @@ while [ "$SUCCESS" = false ]; do
             sudo ln -sfn /run/host/usr/share/cachyos-fish-config/conf.d /usr/share/cachyos-fish-config/conf.d
         fi
     fi
-    cd /
-    rm -rf "\$extract_dir"
-    rm -f "\$tmp_app"
 EOC
 )
 
@@ -503,21 +524,21 @@ echo -e "\n${BLUE}🔗 Exporting application and applying fixes...${NC}"
 LAST_STEP="export:app"
 log "INFO" "Exporting application"
 if [ "$DRY_RUN" = true ]; then
-    log "INFO" "DRY RUN: would run distrobox-export for QIDIStudio"
+    log "INFO" "DRY RUN: would run distrobox-export for xToolStudio"
 else
-    run_logged distrobox enter "$CONTAINER_NAME" -- distrobox-export --app QIDIStudio || fail "Application export failed. See $LOG_FILE for details."
+    run_logged distrobox enter "$CONTAINER_NAME" -- distrobox-export --app xToolStudio || fail "Application export failed. See $LOG_FILE for details."
 fi
 
 D_FILES=()
 if [ -d "$HOME/.local/share/applications" ]; then
     while IFS= read -r desktop_file; do
         D_FILES+=("$desktop_file")
-    done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*QIDIStudio*.desktop" | sort)
+    done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*xToolStudio*.desktop" | sort)
 
     if [ ${#D_FILES[@]} -eq 0 ]; then
         while IFS= read -r desktop_file; do
             D_FILES+=("$desktop_file")
-        done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*qidi*.desktop" | sort)
+        done < <(find "$HOME/.local/share/applications" -maxdepth 1 -iname "*xtool*.desktop" | sort)
     fi
 fi
 
@@ -533,10 +554,10 @@ if [ ${#D_FILES[@]} -gt 0 ]; then
 
     [ -x "$(command -v update-desktop-database)" ] && update-desktop-database ~/.local/share/applications
     echo -e "${GREEN}Installation successful!${NC}"
-    echo -e "You can now find 'QIDI Studio' in your app menu."
+    echo -e "You can now find 'xTool Studio' in your app menu."
 else
     if [ "$DRY_RUN" = true ]; then
-        log "INFO" "DRY RUN: desktop file would be created at ~/.local/share/applications/*qidi*.desktop"
+        log "INFO" "DRY RUN: desktop file would be created at ~/.local/share/applications/*xtool*.desktop"
         exit 0
     fi
     echo -e "${RED}Export failed. Desktop file not found.${NC}"

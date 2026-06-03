@@ -1,259 +1,207 @@
-# QiDi‑Studio‑CachyBox
-### QiDi Studio: CachyOS Container Edition
+# xTool Studio Cachy Box
+### xTool Studio: Containerized Windows Runtime for CachyOS and Fedora
 
-This repository contains installer scripts and container configuration that make it simple to run **QiDi Studio** inside a lightweight Ubuntu 24.04 LTS container using **Distrobox** and **Podman**. The container approach protects you from library incompatibilities on rolling‑release distros such as CachyOS while still providing native GPU acceleration.
+This repository installs xTool Studio inside an Ubuntu 24.04 container using Distrobox and Podman, then runs the official Windows build through Wine. The goal is to give CachyOS and Fedora users a repeatable way to run xTool Studio even though xTool does not publish a Linux build.
+
+---
+
+## What Changed
+
+This project no longer installs a Linux AppImage. It now:
+
+- resolves the latest xTool Studio Windows installer from xTool support pages,
+- downloads the official `.exe` into a persistent per-user cache,
+- initializes a Wine prefix inside the container,
+- launches the xTool Studio installer on first run,
+- exports a desktop launcher through Distrobox so the app behaves like a native entry.
+
+The project name is now **xTool Studio Cachy Box**.
 
 ---
 
 ## Features
 
-* **Latest Release Resolution:** Resolves the latest QiDi Studio Ubuntu 24 AppImage from the official GitHub releases by default, with overrides available via `--url` or `QIDI_URL`.
-* **Hardware-Aware Detection:** Automatically identifies Nvidia, AMD, or Intel GPUs and sets up the correct driver stack.
-* **Manual Hardware Override:** Allows users to force a specific driver stack (Nvidia, AMD, Intel, or Generic) during setup.
-* **Image Source Selection:** Choose between pulling a standard image from DockerHub or building a locally optimized image via specific `Containerfiles`.
-* **Automatic Resource Management (Auto‑Stop):** The container shuts down (`distrobox stop`) as soon as the QiDi Studio window is closed.
-* **Desktop Integration:** Clean integration into your application menu with corrected icon paths and categories.
-* **Robust Network Handling:** Retries the installation with a DNS workaround if network resolution fails.
+- Automatic latest-release lookup from xTool release notes, with `--url` and `XTOOL_URL` overrides.
+- GPU-aware container setup for Nvidia, AMD, Intel, or software rendering.
+- Works on host systems such as CachyOS and Fedora by isolating Wine and Ubuntu dependencies in the container.
+- Persistent Wine prefix and installer cache under `~/.local/share/xtool-studio/`.
+- Desktop integration through `distrobox-export`.
+- Optional local image builds through `containerfile.amd`, `containerfile.intel`, and `containerfile.nvidia`.
+- DNS retry path for container creation when upstream downloads fail due to name resolution.
+
+---
+
+## Important Notes
+
+- xTool officially supports Windows and macOS, not Linux. This repository is an unofficial compatibility layer.
+- The first launch may open the Windows installer inside Wine. Complete the installer, then relaunch from the exported desktop entry if the app does not start automatically.
+- Device connectivity, camera features, and hardware-specific workflows may still have Wine limitations.
 
 ---
 
 ## Prerequisites
 
-Ensure your host system has the following installed:
+Install these on the host:
 
-* **Podman** (Container Engine)
-* **Distrobox** (Container Integration Tool)
-* **curl** (for downloading releases)
-* **nvidia-container-toolkit** and a generated CDI spec such as `/etc/cdi/nvidia.yaml` (Only if you are using the Nvidia container path)
+- `podman`
+- `distrobox`
+- `curl`
+- `bash`
+- `nvidia-container-toolkit` plus a CDI spec such as `/etc/cdi/nvidia.yaml` if you want the Nvidia path
 
 ---
 
 ## Installation
 
-1. **Clone the repository:**
+1. Clone the repository.
 
-   ```bash
-   git clone https://github.com/AkitaEngineering/QiDi-Studio-CachyBox.git
-   cd QiDi-Studio-CachyBox
-   ```
+```bash
+git clone https://github.com/Slashdacoda/AnySlicer-Next-CachyBox.git
+cd 'xTool Studio-Cachy Box'
+```
 
-2. **Run the default Bash installer:**
+2. Run the Bash installer.
 
-   Bash is the default and recommended install path:
-   ```bash
-   chmod +x install.sh
-   ./install.sh
-   ```
+```bash
+chmod +x install.sh
+./install.sh
+```
 
-   If you specifically want the Fish variant instead:
-   ```bash
-   chmod +x install.fish
-   ./install.fish
-   ```
+3. If you prefer calling the Fish entrypoint, it delegates to the same Bash installer.
 
-3. **Answer the interactive prompts.**
+```fish
+chmod +x install.fish
+./install.fish
+```
 
-   The installer will:
-   * detect your GPU and let you override the driver stack (Nvidia/AMD/Intel/Generic),
-   * optionally build a custom container image or pull a prebuilt one,
-   * resolve the latest QiDi Studio Ubuntu 24 AppImage unless you override it,
-   * download that AppImage and register it with Distrobox.
+4. Answer the prompts for GPU stack and image source.
 
-   Once complete the application will appear in your desktop menu; closing the window automatically stops the container.
+The installer will:
+
+- detect your GPU,
+- optionally build a local image,
+- resolve the latest xTool Studio Windows installer,
+- create the Distrobox container,
+- install Wine and runtime dependencies in the container,
+- export `xToolStudio` to your desktop menu.
 
 ---
 
 ## Command-Line Options
 
-Use these flags when you want to validate a host, automate installs, or preselect the installer prompts.
-
 | Flag | Scope | Description |
 | :--- | :--- | :--- |
-| `--check` | Bash / Fish | Run prerequisite and environment checks, then exit without installing. |
-| `--dry-run` | Bash / Fish | Print the actions the installer would take without changing the system. |
-| `--non-interactive`, `--yes`, `-y` | Bash / Fish | Accept defaults and skip interactive prompts. |
-| `--uninstall` | Bash / Fish | Hand off to the matching uninstaller while preserving the selected container name and dry-run/non-interactive mode. |
-| `--url URL` | Bash / Fish | Use a specific AppImage instead of resolving the latest Ubuntu 24 release. |
-| `--container-name NAME` | Bash / Fish | Override the default container name, `qidi-studio`. |
-| `--gpu 1-4` | Bash / Fish | Preselect the driver stack: `1` Nvidia, `2` AMD, `3` Intel, `4` Generic/software rendering. |
-| `--image-source 1-2` | Bash / Fish | Choose the image source up front: `1` pull the standard Ubuntu 24 image, `2` build the matching local `containerfile.*`. |
-| `--log-file PATH` | Bash / Fish | Write installer logs to a custom path instead of the default log location. |
+| `--check` | Bash / Fish | Run prerequisite checks and exit. |
+| `--dry-run` | Bash / Fish | Print what would happen without changing the system. |
+| `--non-interactive`, `--yes`, `-y` | Bash / Fish | Accept defaults automatically. |
+| `--uninstall` | Bash / Fish | Delegate to the matching uninstaller. |
+| `--url URL` | Bash / Fish | Use a specific xTool Studio Windows installer URL instead of auto-resolving the latest one. |
+| `--container-name NAME` | Bash / Fish | Override the default container name, `xtool-studio`. |
+| `--gpu 1-4` | Bash / Fish | Preselect the driver stack: `1` Nvidia, `2` AMD, `3` Intel, `4` software rendering. |
+| `--image-source 1-2` | Bash / Fish | Choose `1` for the stock Ubuntu image or `2` for a local image build. |
+| `--log-file PATH` | Bash / Fish | Write logs to a custom path. |
 
-### Example Automation Flows
+### Examples
 
 ```bash
 ./install.sh --check
 ./install.sh --non-interactive --gpu 2 --image-source 2
-./install.sh --dry-run --container-name qidi-studio-test
+./install.sh --dry-run --container-name xtool-studio-test
+./install.sh --url https://storage.atomm.com/.../xTool-Studio-x64-1.6.6.exe
 ```
 
-```fish
-./install.fish --non-interactive --url https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage
-```
+---
 
-### Common Non-Interactive Installs
+## Runtime Layout
 
-Bash examples:
+The installer uses these locations:
+
+- Host cache and logs: `~/.cache/xtool-studio-cachy-box/`
+- Host Wine data and downloaded installer: `~/.local/share/xtool-studio/`
+- Exported launcher inside the container: `/usr/local/bin/xToolStudio`
+- Exported desktop entry inside the container: `/usr/share/applications/xToolStudio.desktop`
+
+---
+
+## Podman Compose
+
+You can also run the compose setup directly.
+
+1. Optionally select a local image and containerfile.
 
 ```bash
-# AMD host: build the AMD-tuned local image
-./install.sh --non-interactive --gpu 2 --image-source 2
-
-# Intel host: build the Intel-tuned local image
-./install.sh --non-interactive --gpu 3 --image-source 2
-
-# Nvidia host: requires Podman CDI support
-./install.sh --non-interactive --gpu 1 --image-source 2
-
-# Preflight only: verify prerequisites and exit
-./install.sh --check
-
-# Dry run: preview the AMD install path without making changes
-./install.sh --dry-run --non-interactive --gpu 2 --image-source 2
+export XTOOL_IMAGE=xtool-custom-amd
+export XTOOL_CONTAINERFILE=containerfile.amd
 ```
 
-Fish equivalents:
+2. Optionally pin a specific upstream Windows installer.
+
+```bash
+export XTOOL_URL=https://storage.atomm.com/.../xTool-Studio-x64-1.6.6.exe
+```
+
+3. Launch.
+
+```bash
+podman compose up
+```
+
+The compose service follows the same pattern as the installer: download the Windows `.exe`, initialize a Wine prefix, and launch xTool Studio from inside the container.
+
+---
+
+## Uninstallation
+
+Run:
+
+```bash
+./uninstall.sh
+```
+
+Or use the Fish wrapper:
 
 ```fish
-# AMD host: build the AMD-tuned local image
-./install.fish --non-interactive --gpu 2 --image-source 2
-
-# Intel host: build the Intel-tuned local image
-./install.fish --non-interactive --gpu 3 --image-source 2
-
-# Nvidia host: requires Podman CDI support
-./install.fish --non-interactive --gpu 1 --image-source 2
-
-# Preflight only: verify prerequisites and exit
-./install.fish --check
-
-# Dry run: preview the AMD install path without making changes
-./install.fish --dry-run --non-interactive --gpu 2 --image-source 2
+./uninstall.fish
 ```
 
-The Nvidia example assumes `nvidia-container-toolkit` and a CDI spec such as `/etc/cdi/nvidia.yaml`; otherwise the installer falls back to Generic rendering in non-interactive mode.
+The uninstaller removes:
 
----
+- the Distrobox export,
+- the Distrobox container,
+- local custom Podman images matching `xtool-custom-*`,
+- exported desktop entries and launchers.
 
-## File Structure
-
-| File | Purpose |
-| :--- | :--- |
-| `install.sh` | Default Bash installer for any Linux distro. |
-| `install.fish` | Optional Fish-shell installer variant. |
-| `uninstall.sh` / `uninstall.fish` | Clean up containers, images, and desktop entries. |
-| `containerfile.amd`, `containerfile.intel`, `containerfile.nvidia` | Blueprints to build a local container image for AMD, Intel, or Nvidia hosts. |
-| `docker-compose.yml` | Configuration for running QiDi Studio via `podman compose` or `docker compose`. |
-
----
-
-## Functionality Summary
-
-1. **GPU override:** Detects your GPU (e.g. AMD 7900XTX) but lets you pick a different stack if needed.
-2. **Image source options:** Use a prebuilt image or build one locally for maximum compatibility.
-3. **Auto‑stop launcher:** Exported desktop entry wraps the command so the container exits when the app closes.
-4. **Icon fixup:** Removes `/run/host` prefixes from exported `.desktop` files to avoid broken icons.
-
----
-
-## Advanced Usage: Podman‑Compose
-
-You can bypass the installer and run the container manually.
-
-1. Export the desired image and Containerfile variables:
-   * Fish: `set -x QIDI_IMAGE qidi-custom-amd; set -x QIDI_CONTAINERFILE containerfile.amd`
-   * Bash: `export QIDI_IMAGE=qidi-custom-amd; export QIDI_CONTAINERFILE=containerfile.amd`
-
-2. Optional: override the AppImage URL if you need a specific release instead of the latest detected Ubuntu 24 build:
-   * Fish: `set -x QIDI_URL https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage`
-   * Bash: `export QIDI_URL=https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage`
-
-3. Launch:
-   ```bash
-   podman compose up
-   ```
-
-On first launch, the compose setup builds the selected image if needed, resolves the latest Ubuntu 24 AppImage, and caches the extracted runtime under `~/.local/share/qidi-studio/`. On later runs it only refreshes that cache when the resolved release URL changes.
+It can also remove `~/.local/share/xtool-studio/`, which contains the Wine prefix and cached installer.
 
 ---
 
 ## Troubleshooting
 
-* **DNS errors:** Installer retries with `--dns 1.1.1.1` if it cannot resolve hosts.
-* **Nvidia install hangs at container creation:** Install `nvidia-container-toolkit`, generate a CDI spec such as `sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`, then rerun the installer. Without CDI support, the installer falls back to Generic rendering.
-* **FUSE errors:** The container installs `libfuse2*`; make sure you have FUSE permissions.
-* **Broken icons:** Run `update-desktop-database ~/.local/share/applications` after install.
+- DNS failures: the installer retries container creation with explicit DNS servers.
+- Nvidia failures during container creation: configure Podman CDI support first.
+- Blank or unstable rendering: retry with `--gpu 4` to force software rendering.
+- Installer opens but no app launches afterward: finish the xTool Studio installer in Wine, then relaunch the exported desktop entry.
+- Unsupported host expectation: xTool does not support Linux officially, so some features may still require a Windows machine.
 
 ---
 
-## FAQ
+## Upgrade Flow
 
-### Why use Distrobox?
-
-QiDi Studio depends on specific library versions that can conflict on rolling‑release distros. Distrobox provides a stable Ubuntu environment while still presenting the app as native.
-
-### Is there a performance penalty?
-
-No. The GPU is passed through directly via Mesa/DRI or the Nvidia stack, giving native performance in the 3D preview.
-
-### Where are my settings stored?
-
-Configurations persist in `~/.config/QIDIStudio/` on the host. They remain intact if you reinstall or recreate the container.
-
----
-
-## Upgrading
-
-To upgrade QiDi Studio or pick up changes from this repository, update this repo and rerun the installer with the same options you used originally.
+Rerun the installer:
 
 ```bash
 git pull
 ./install.sh
 ```
 
-The installer removes any existing container with the selected name, recreates it, and resolves the latest Ubuntu 24 QiDi Studio AppImage by default. Your profiles and settings are normally preserved because they live in `~/.config/QIDIStudio/` on the host.
-
-If you installed with specific flags before, reuse them during the upgrade. Examples:
-
-```bash
-# Generic / software rendering
-./install.sh --non-interactive --gpu 4 --image-source 1
-
-# Rebuild a custom local image during upgrade
-./install.sh --non-interactive --gpu 2 --image-source 2
-
-# Pin a specific upstream AppImage instead of the latest release
-./install.sh --url https://github.com/QIDITECH/QIDIStudio/releases/download/.../QIDIStudio.AppImage
-```
-
-Fish users can follow the same process with `./install.fish` and the same flags.
-
-You only need to run the uninstaller first if you want a full clean reset. A normal upgrade does not remove your saved settings unless you explicitly choose that during uninstall.
-
----
-
-## Uninstallation
-
-Run `./uninstall.sh` to remove the container, images, and desktop entries.
-
-If you specifically want the Fish variant, run `./uninstall.fish`.
-
-You can also delegate to the matching uninstaller via `./install.sh --uninstall` or `./install.fish --uninstall`.
+By default, the script resolves the newest Windows installer it can detect from xTool support pages. If you need a known-good version, rerun with `--url`.
 
 ---
 
 ## License
 
-The code and configuration in this repository remain available under the MIT License.
+The automation code in this repository is provided under the MIT License.
 
-This fork preserves attribution to the original MIT-licensed work by Sascha Schüller and includes Akita Engineering's QiDi Studio adaptations, fixes, and release work under the same repository license.
+xTool Studio itself is proprietary software owned by xTool and is not redistributed under the repository license.
 
-QIDI Studio itself is proprietary software owned by QIDITECH and is not redistributed under the MIT License in this repository.
-
-See [LICENSE.md](LICENSE.md) for the full attribution wording and the proprietary-software disclaimer.
-
----
-
-## Credits
-
-Original MIT-licensed work by Sascha Schüller. Adapted, fixed, and released for QiDi Studio by Akita Engineering.
+See `LICENSE.md` for details.

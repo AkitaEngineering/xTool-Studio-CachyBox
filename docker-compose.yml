@@ -1,91 +1,79 @@
 services:
-  qidi-studio:
-    # Set the image name.
-    # Defaults to 'qidi-custom-amd' if the variable is not set.
-    image: ${QIDI_IMAGE:-qidi-custom-amd}
+  xtool-studio:
+    image: ${XTOOL_IMAGE:-xtool-custom-amd}
     build:
       context: .
-      dockerfile: ${QIDI_CONTAINERFILE:-containerfile.amd}
-    container_name: qidi-studio-compose
-
-    # Use host networking for seamless X11/Wayland communication
+      dockerfile: ${XTOOL_CONTAINERFILE:-containerfile.amd}
+    container_name: xtool-studio-compose
     network_mode: host
-
-    # Privileged mode is required for direct hardware/GPU access
     privileged: true
-
     environment:
       - DISPLAY=${DISPLAY}
       - WAYLAND_DISPLAY=${WAYLAND_DISPLAY}
       - XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR}
-      # Fix for some QT-based GUI issues
       - QT_X11_NO_MITSHM=1
       - NO_AT_BRIDGE=1
-      # Locale settings to prevent decimal/formatting crashes
       - LANG=en_US.UTF-8
       - LC_ALL=en_US.UTF-8
-      - QIDI_URL=${QIDI_URL:-}
-
+      - XTOOL_URL=${XTOOL_URL:-}
+      - XTOOL_FORCE_SOFTWARE_RENDERING=${XTOOL_FORCE_SOFTWARE_RENDERING:-0}
     volumes:
-      # X11 Socket for GUI
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-
-      # Wayland Socket (optional, used by modern desktops like KDE/GNOME)
       - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:ro
-
-      # Maps your host home directory to the container user's home
-      # This ensures your printer profiles and files are persistent
       - ${HOME}:/home/sliceruser:rw
-
-      # Direct GPU access for AMD and Intel (Mesa/DRI)
       - /dev/dri:/dev/dri:rw
-
-    # Download the AppImage on first run, then launch it from the mounted home directory.
     command:
       - /bin/bash
       - -lc
       - |
         set -euo pipefail
-        resolve_latest_qidi_url() {
-          local api_url="https://api.github.com/repos/QIDITECH/QIDIStudio/releases/latest"
-          local fallback_url="https://github.com/QIDITECH/QIDIStudio/releases/download/v2.05.02.50/QIDIStudio_v02.05.02.50_Ubuntu24.AppImage"
+        resolve_latest_xtool_url() {
+          local notes_url="https://support.xtool.com/article/1773"
+          local fallback_url="https://storage.atomm.com/efficacy/atomm-package/prod/packages/109/d7cb892b-c082-4565-803e-5e71b9f8026b/xTool-Studio-x64-1.6.6.exe"
           local latest_response latest_url
-          latest_response=$$(curl --fail -fsSL --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 60 -H "Accept: application/vnd.github+json" "$$api_url" || true)
-          latest_url=$$(printf "%s" "$$latest_response" | grep -oE '"browser_download_url":[[:space:]]*"[^"]+Ubuntu24\.AppImage"' | head -n 1 | sed -E 's/.*"([^"]+)"/\1/')
-          if [ -z "$$latest_url" ]; then
-            latest_url=$$(printf "%s" "$$latest_response" | grep -oE '"browser_download_url":[[:space:]]*"[^"]+AppImage"' | head -n 1 | sed -E 's/.*"([^"]+)"/\1/')
-          fi
-          if [ -n "$$latest_url" ]; then
-            printf "%s\n" "$$latest_url"
+          latest_response=$(curl --fail -fsSL --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 60 "$notes_url" || true)
+          latest_url=$(printf "%s" "$latest_response" | grep -oE 'https://storage[^"[:space:]]+/xTool-Studio-x64-[^"[:space:]]+\.exe' | head -n 1)
+          if [ -n "$latest_url" ]; then
+            printf "%s\n" "$latest_url"
           else
-            printf "%s\n" "$$fallback_url"
+            printf "%s\n" "$fallback_url"
           fi
         }
-        QIDI_DOWNLOAD_URL="$$QIDI_URL"
-        if [ -z "$$QIDI_DOWNLOAD_URL" ]; then
-          QIDI_DOWNLOAD_URL=$$(resolve_latest_qidi_url)
+        XTOOL_DOWNLOAD_URL="$XTOOL_URL"
+        if [ -z "$XTOOL_DOWNLOAD_URL" ]; then
+          XTOOL_DOWNLOAD_URL=$(resolve_latest_xtool_url)
         fi
-        mkdir -p "$$HOME/.local/bin" "$$HOME/.local/share/qidi-studio"
-        QIDI_URL_FILE="$$HOME/.local/share/qidi-studio/last-download-url"
-        QIDI_RUNTIME_DIR="$$HOME/.local/share/qidi-studio/runtime"
-        if [ -f "$$QIDI_URL_FILE" ]; then
-          CACHED_QIDI_URL=$$(cat "$$QIDI_URL_FILE")
-        else
-          CACHED_QIDI_URL=""
+        mkdir -p "$HOME/.local/bin" "$HOME/.local/share/xtool-studio/downloads"
+        XTOOL_URL_FILE="$HOME/.local/share/xtool-studio/last-download-url"
+        XTOOL_INSTALLER_PATH="$HOME/.local/share/xtool-studio/downloads/xTool-Studio-setup.exe"
+        if [ ! -f "$XTOOL_INSTALLER_PATH" ] || [ ! -f "$XTOOL_URL_FILE" ] || [ "$(cat "$XTOOL_URL_FILE" 2>/dev/null || true)" != "$XTOOL_DOWNLOAD_URL" ]; then
+          curl --fail -L --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 300 --progress-bar "$XTOOL_DOWNLOAD_URL" -o "$XTOOL_INSTALLER_PATH"
+          printf "%s\n" "$XTOOL_DOWNLOAD_URL" > "$XTOOL_URL_FILE"
         fi
-        if [ ! -x "$$QIDI_RUNTIME_DIR/AppRun" ] || [ "$$CACHED_QIDI_URL" != "$$QIDI_DOWNLOAD_URL" ]; then
-          TMP_DIR=$$(mktemp -d)
-          APPIMAGE_PATH="$$TMP_DIR/QIDIStudio.AppImage"
-          curl --fail -L --retry 5 --retry-delay 2 --connect-timeout 15 --max-time 300 --progress-bar "$$QIDI_DOWNLOAD_URL" -o "$$APPIMAGE_PATH"
-          chmod +x "$$APPIMAGE_PATH"
-          cd "$$TMP_DIR"
-          "$$APPIMAGE_PATH" --appimage-extract >/dev/null
-          rm -rf "$$QIDI_RUNTIME_DIR"
-          mkdir -p "$$QIDI_RUNTIME_DIR"
-          cp -a squashfs-root/. "$$QIDI_RUNTIME_DIR/"
-          printf "#!/bin/sh\nexec %s/AppRun \"\$@\"\n" "$$QIDI_RUNTIME_DIR" > "$$HOME/.local/bin/QIDIStudio"
-          chmod +x "$$HOME/.local/bin/QIDIStudio"
-          printf "%s\n" "$$QIDI_DOWNLOAD_URL" > "$$QIDI_URL_FILE"
-          rm -rf "$$TMP_DIR"
-        fi
-        exec "$$HOME/.local/bin/QIDIStudio"
+        printf '%s\n' \
+          '#!/bin/sh' \
+          'set -eu' \
+          'APP_HOME="$HOME/.local/share/xtool-studio"' \
+          'PREFIX_DIR="$APP_HOME/prefix"' \
+          'INSTALLER_PATH="$APP_HOME/downloads/xTool-Studio-setup.exe"' \
+          'mkdir -p "$APP_HOME" "$APP_HOME/downloads"' \
+          'export WINEPREFIX="$PREFIX_DIR"' \
+          'export WINEARCH=win64' \
+          'if [ ! -d "$PREFIX_DIR" ]; then' \
+          '  wineboot -u >/dev/null 2>&1 || true' \
+          'fi' \
+          'if [ "${XTOOL_FORCE_SOFTWARE_RENDERING:-0}" = "1" ]; then' \
+          '  export LIBGL_ALWAYS_SOFTWARE="${LIBGL_ALWAYS_SOFTWARE:-1}"' \
+          '  export GALLIUM_DRIVER="${GALLIUM_DRIVER:-llvmpipe}"' \
+          '  export MESA_LOADER_DRIVER_OVERRIDE="${MESA_LOADER_DRIVER_OVERRIDE:-llvmpipe}"' \
+          'fi' \
+          'APP_EXE=$(find "$PREFIX_DIR/drive_c" -type f \( -iname "xTool Studio*.exe" -o -iname "xTool-Studio*.exe" -o -iname "xToolStudio*.exe" \) ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" 2>/dev/null | sort | head -n 1)' \
+          'if [ -z "$APP_EXE" ]; then' \
+          '  wine "$INSTALLER_PATH"' \
+          '  APP_EXE=$(find "$PREFIX_DIR/drive_c" -type f \( -iname "xTool Studio*.exe" -o -iname "xTool-Studio*.exe" -o -iname "xToolStudio*.exe" \) ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" 2>/dev/null | sort | head -n 1)' \
+          'fi' \
+          '[ -n "$APP_EXE" ] || { echo "xTool Studio executable not found after installer exit." >&2; exit 1; }' \
+          'exec wine "$APP_EXE" "$@"' \
+          > "$HOME/.local/bin/xToolStudio"
+        chmod +x "$HOME/.local/bin/xToolStudio"
+        exec "$HOME/.local/bin/xToolStudio"
