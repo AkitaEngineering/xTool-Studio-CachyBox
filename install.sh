@@ -438,6 +438,7 @@ while [ "$SUCCESS" = false ]; do
     installer_path="\$installer_dir/xTool-Studio-setup.exe"
     user_name="\${USER:-\$(id -un 2>/dev/null || echo user)}"
     app_install_dir="\$prefix_dir/drive_c/users/\$user_name/AppData/Local/Programs/xTool Studio"
+    nsis_plugin_dir='\$PLUGINSDIR'
     mkdir -p "\$installer_dir"
     if [ ! -f "\$installer_path" ] || [ ! -f "\$url_record" ] || [ "\$(cat "\$url_record")" != "$XTOOL_URL" ]; then
         echo 'Downloading xTool Studio Windows installer (with retries)'
@@ -453,7 +454,7 @@ while [ "$SUCCESS" = false ]; do
         rm -rf "\$payload_dir" "\$app_install_dir"
         mkdir -p "\$payload_dir" "\$app_install_dir"
         7z x -y "\$installer_path" -o"\$payload_dir" >/dev/null
-        7z x -y "\$payload_dir/\$PLUGINSDIR/app-64.7z" -o"\$app_install_dir" >/dev/null
+        7z x -y "\$payload_dir/\$nsis_plugin_dir/app-64.7z" -o"\$app_install_dir" >/dev/null
         printf '%s\n' "$XTOOL_URL" > "\$extracted_url_record"
     fi
     printf '%s\n' '#!/bin/sh' \
