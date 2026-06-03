@@ -56,7 +56,7 @@ Install these on the host:
 1. Clone the repository.
 
 ```bash
-git clone https://github.com/Slashdacoda/AnySlicer-Next-CachyBox.git
+git clone https://github.com/AkitaEngineering/xTool-Studio-CachyBox.git
 cd 'xTool Studio-Cachy Box'
 ```
 
