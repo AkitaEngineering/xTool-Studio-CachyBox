@@ -426,14 +426,18 @@ while [ "$SUCCESS" = false ]; do
     sudo dpkg --add-architecture i386
     sudo apt update
     echo 'Running: apt install (this will stream progress)'
-    sudo apt install -y curl ca-certificates lsb-release locales sudo wine64 wine32 winbind cabextract p7zip-full xdg-utils libgl1 libglx-mesa0 libegl1 libgl1-mesa-dri mesa-utils mesa-vulkan-drivers libasound2 libpulse0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 libwayland-server0
+    sudo apt install -y curl ca-certificates lsb-release locales sudo wine64 wine32 winbind cabextract p7zip-full xdg-utils libgl1 libglx-mesa0 libegl1 libgl1-mesa-dri mesa-utils mesa-vulkan-drivers libasound2t64 libpulse0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libwebkit2gtk-4.1-0 libjavascriptcoregtk-4.1-0 libwayland-server0
     echo 'Generating locales'
     sudo locale-gen en_US.UTF-8
     app_home="\$HOME/.local/share/xtool-studio"
     installer_dir="\$app_home/downloads"
+    payload_dir="\$app_home/payload"
     prefix_dir="\$app_home/prefix"
     url_record="\$app_home/last-download-url"
+    extracted_url_record="\$app_home/last-extracted-url"
     installer_path="\$installer_dir/xTool-Studio-setup.exe"
+    user_name="\${USER:-\$(id -un 2>/dev/null || echo user)}"
+    app_install_dir="\$prefix_dir/drive_c/users/\$user_name/AppData/Local/Programs/xTool Studio"
     mkdir -p "\$installer_dir"
     if [ ! -f "\$installer_path" ] || [ ! -f "\$url_record" ] || [ "\$(cat "\$url_record")" != "$XTOOL_URL" ]; then
         echo 'Downloading xTool Studio Windows installer (with retries)'
@@ -444,14 +448,39 @@ while [ "$SUCCESS" = false ]; do
         echo 'Initializing Wine prefix'
         WINEPREFIX="\$prefix_dir" wineboot -u >/dev/null 2>&1 || true
     fi
+    if [ ! -f "\$app_install_dir/xTool Studio.exe" ] || [ ! -f "\$extracted_url_record" ] || [ "\$(cat "\$extracted_url_record")" != "$XTOOL_URL" ]; then
+        echo 'Extracting xTool Studio application payload'
+        rm -rf "\$payload_dir" "\$app_install_dir"
+        mkdir -p "\$payload_dir" "\$app_install_dir"
+        7z x -y "\$installer_path" -o"\$payload_dir" >/dev/null
+        7z x -y "\$payload_dir/\$PLUGINSDIR/app-64.7z" -o"\$app_install_dir" >/dev/null
+        printf '%s\n' "$XTOOL_URL" > "\$extracted_url_record"
+    fi
     printf '%s\n' '#!/bin/sh' \
         'set -eu' \
         'APP_HOME="\$HOME/.local/share/xtool-studio"' \
         'PREFIX_DIR="\$APP_HOME/prefix"' \
         'INSTALLER_DIR="\$APP_HOME/downloads"' \
         'INSTALLER_PATH="\$INSTALLER_DIR/xTool-Studio-setup.exe"' \
+        'USER_NAME="${USER:-$(id -un 2>/dev/null || echo user)}"' \
+        'INSTALLER_TEMP_DIR="\$PREFIX_DIR/drive_c/users/\$USER_NAME/Temp/xTool-Studio"' \
+        'is_installer_running() {' \
+        '  pgrep -af "xTool-Studio-setup\\.exe" >/dev/null 2>&1' \
+        '}' \
         'find_installed_exe() {' \
-        '  find "\$PREFIX_DIR/drive_c" -type f \\( -iname "xTool Studio*.exe" -o -iname "xTool-Studio*.exe" -o -iname "xToolStudio*.exe" \\) ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" | sort | head -n 1' \
+        '  for dir in "\$PREFIX_DIR/drive_c/users/\$USER_NAME/AppData/Local/Programs/xTool Studio" "\$PREFIX_DIR/drive_c/Program Files/xTool Studio" "\$PREFIX_DIR/drive_c/Program Files (x86)/xTool Studio"; do' \
+        '    if [ -d "\$dir" ]; then' \
+        '      for candidate in "\$dir/xTool Studio.exe" "\$dir/xTool-Studio.exe" "\$dir/xToolStudio.exe"; do' \
+        '        if [ -f "\$candidate" ]; then' \
+        '          printf "%s\\n" "\$candidate"' \
+        '          return 0' \
+        '        fi' \
+        '      done' \
+        '      find "\$dir" -type f -iname "*.exe" ! -iname "xTool Studio.exe" ! -iname "xTool-Studio.exe" ! -iname "xToolStudio.exe" ! -iname "elevate.exe" ! -iname "*setup*.exe" ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" | sort | head -n 1' \
+        '      return 0' \
+        '    fi' \
+        '  done' \
+        '  find "\$PREFIX_DIR/drive_c" -type f \\( -iname "xTool Studio*.exe" -o -iname "xTool-Studio*.exe" -o -iname "xToolStudio*.exe" \\) ! -iname "elevate.exe" ! -iname "*setup*.exe" ! -iname "*unins*.exe" ! -iname "*uninstall*.exe" ! -iname "*update*.exe" | sort | head -n 1' \
         '}' \
         'mkdir -p "\$APP_HOME" "\$INSTALLER_DIR"' \
         'if [ ! -d "\$PREFIX_DIR" ]; then' \
@@ -462,21 +491,23 @@ while [ "$SUCCESS" = false ]; do
         '  export GALLIUM_DRIVER="${GALLIUM_DRIVER:-llvmpipe}"' \
         '  export MESA_LOADER_DRIVER_OVERRIDE="${MESA_LOADER_DRIVER_OVERRIDE:-llvmpipe}"' \
         '  export __GLX_VENDOR_LIBRARY_NAME="${__GLX_VENDOR_LIBRARY_NAME:-mesa}"' \
+        '  export ELECTRON_DISABLE_GPU="${ELECTRON_DISABLE_GPU:-1}"' \
         '  if [ -z "${__EGL_VENDOR_LIBRARY_FILENAMES:-}" ] && [ -f /usr/share/glvnd/egl_vendor.d/50_mesa.json ]; then' \
         '    export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json' \
         '  fi' \
+        '  set -- --disable-gpu --disable-gpu-compositing --use-angle=swiftshader --disable-features=Vulkan "$@"' \
         'fi' \
         'APP_EXE="\$(find_installed_exe)"' \
         'if [ -z "\$APP_EXE" ]; then' \
+        '  if is_installer_running; then' \
+        '    echo "xTool Studio installer is already running. Complete it or close it before retrying." >&2' \
+        '    exit 2' \
+        '  fi' \
+        '  rm -rf "\$INSTALLER_TEMP_DIR"' \
         '  echo "Launching xTool Studio installer inside Wine..."' \
-        '  WINEPREFIX="\$PREFIX_DIR" wine "\$INSTALLER_PATH" "\$@"' \
-        '  APP_EXE="\$(find_installed_exe)"' \
+        '  exec env WINEPREFIX="\$PREFIX_DIR" wine "\$INSTALLER_PATH" "\$@"' \
         'fi' \
-        'if [ -z "\$APP_EXE" ]; then' \
-        '  echo "xTool Studio executable was not detected after installer exit. Complete setup, then relaunch." >&2' \
-        '  exit 1' \
-        'fi' \
-        'exec env WINEPREFIX="\$PREFIX_DIR" wine "\$APP_EXE" "\$@"' | sudo tee /usr/local/bin/xToolStudio >/dev/null
+        'exec env WINEPREFIX="\$PREFIX_DIR" wine start /unix "\$APP_EXE" "\$@"' | sudo tee /usr/local/bin/xToolStudio >/dev/null
     sudo chmod 0755 /usr/local/bin/xToolStudio
     printf '%s\n' \
         '[Desktop Entry]' \
